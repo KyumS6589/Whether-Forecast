@@ -122,6 +122,27 @@
     function displayUnit(c){ return state.unit === 'C' ? c : toF(c); }
     function prettyDate(iso){ return new Intl.DateTimeFormat(undefined,{weekday:'short',month:'short',day:'numeric'}).format(new Date(iso)); }
 
+    // ------------ Geocoding ------------
+    async function geocode(q){
+      const url = new URL('https://nominatim.openstreetmap.org/search');
+      url.searchParams.set('q', q);
+      url.searchParams.set('format','json');
+      url.searchParams.set('addressdetails','1');
+      url.searchParams.set('limit','5');
+      const res = await fetch(url.toString(), { headers: { 'Accept-Language': navigator.language || 'en' }});
+      if (!res.ok) throw new Error('Geocoding failed');
+      return res.json();
+    }
+    async function reverseGeocode(lat, lon){
+      const url = new URL('https://nominatim.openstreetmap.org/reverse');
+      url.searchParams.set('lat', lat); url.searchParams.set('lon', lon);
+      url.searchParams.set('format','json'); url.searchParams.set('zoom','10');
+      const res = await fetch(url.toString(), { headers: { 'Accept-Language': navigator.language || 'en' }});
+      if (!res.ok) throw new Error('Reverse geocoding failed');
+      const j = await res.json();
+      return j?.display_name || `${fmt(lat,2)}, ${fmt(lon,2)}`;
+    }
+
     // ------------ Weather ------------
     async function fetchWeather(lat, lon){
       const url = new URL('https://api.open-meteo.com/v1/forecast');
@@ -217,6 +238,10 @@
         daily.time.forEach((d, i)=>{
           const card = document.createElement('button');
           card.className = 'rounded-2xl border border-slate-200 bg-white/60 p-2 hover:bg-indigo-100 transition';
+          const icon = document.createElement('div'); icon.className = 'text-2xl'; icon.textContent = codeToIcon(daily.weather_code[i]).icon;
+          const temps = document.createElement('div'); temps.className = 'text-xs mt-1';
+          const precip = document.createElement('div'); precip.className = 'text-[11px] text-slate-500 mt-1'; precip.textContent = `${fmt(daily.precipitation_sum[i],0)} mm`;
+          card.appendChild(head); card.appendChild(icon); card.appendChild(temps); card.appendChild(precip);
           card.innerHTML = `
             <div class="text-xs text-slate-500">${prettyDate(d)}</div>
             <div class="text-2xl">${codeToIcon(daily.weather_code[i]).icon}</div>
