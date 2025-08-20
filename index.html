@@ -93,7 +93,56 @@
       if (!res.ok) throw new Error('Weather fetch failed');
       return res.json();
     }
+    
+        // ------------ Search UI ------------
+    let suggestAbort; let suggestTimer;
+    $('search').addEventListener('input', (e)=>{
+      const q = e.target.value.trim();
+      if (suggestTimer) clearTimeout(suggestTimer);
+      if (!q || q.length < 3) { $('suggestions').innerHTML=''; $('suggestions').classList.add('hidden'); return; }
+      suggestTimer = setTimeout(async ()=>{
+        try{
+          suggestAbort?.abort(); suggestAbort = new AbortController();
+          const list = await geocode(q);
+          const ul = $('suggestions');
+          ul.innerHTML = '';
+          list.forEach((s,i)=>{
+            const li = document.createElement('li');
+            const btn = document.createElement('button');
+            btn.className = 'block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100';
+            btn.textContent = s.display_name;
+            btn.addEventListener('click', ()=>{ pickSuggestion(s); });
+            li.appendChild(btn); ul.appendChild(li);
+          });
+          ul.classList.toggle('hidden', list.length === 0);
+        }catch(err){ console.warn(err); }
+      }, 300);
+    });
 
+    function pickSuggestion(s){
+      $('search').value = '';
+      $('suggestions').innerHTML = ''; $('suggestions').classList.add('hidden');
+      setCoords({ lat: Number(s.lat), lon: Number(s.lon) });
+      setLocName(s.display_name || s.name || 'Selected location');
+      loadWeather();
+    }
+
+    // ------------ Geolocation ------------
+    $('geoBtn').addEventListener('click', ()=>{
+      if (!navigator.geolocation) { showError('Geolocation not supported by your browser'); return; }
+      showError(''); setLoading(true);
+      navigator.geolocation.getCurrentPosition(async (pos)=>{
+        const { latitude:lat, longitude:lon } = pos.coords;
+        setCoords({lat,lon});
+        try{ const name = await reverseGeocode(lat,lon); setLocName(name); }catch{}
+        setLoading(false); loadWeather();
+      }, (err)=>{ setLoading(false); showError(err?.message || 'Could not get your location'); }, { enableHighAccuracy:true, timeout:15000, maximumAge:60000 });
+    });
+
+    // ------------ Unit Toggle ------------
+    function updateUnitBtn(){ $('unitBtn').textContent = `°${state.unit} ↔︎ °${state.unit==='C'?'F':'C'}`; }
+    $('unitBtn').addEventListener('click', ()=>{ setUnit(state.unit==='C'?'F':'C'); updateUnitBtn(); });
+    
     // ------------ Render ------------
     function render(){
       updateUnitBtn();
