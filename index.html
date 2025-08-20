@@ -201,7 +201,7 @@
         setLoading(false); loadWeather();
       }, (err)=>{ setLoading(false); showError(err?.message || 'Could not get your location'); }, { enableHighAccuracy:true, timeout:15000, maximumAge:60000 });
     });
-
+    
     // ------------ Unit Toggle ------------
     function updateUnitBtn(){ $('unitBtn').textContent = `°${state.unit} ↔︎ °${state.unit==='C'?'F':'C'}`; }
     $('unitBtn').addEventListener('click', ()=>{ setUnit(state.unit==='C'?'F':'C'); updateUnitBtn(); });
@@ -241,7 +241,6 @@
           const icon = document.createElement('div'); icon.className = 'text-2xl'; icon.textContent = codeToIcon(daily.weather_code[i]).icon;
           const temps = document.createElement('div'); temps.className = 'text-xs mt-1';
           const precip = document.createElement('div'); precip.className = 'text-[11px] text-slate-500 mt-1'; precip.textContent = `${fmt(daily.precipitation_sum[i],0)} mm`;
-          card.appendChild(head); card.appendChild(icon); card.appendChild(temps); card.appendChild(precip);
           card.innerHTML = `
             <div class="text-xs text-slate-500">${prettyDate(d)}</div>
             <div class="text-2xl">${codeToIcon(daily.weather_code[i]).icon}</div>
@@ -319,11 +318,7 @@
       hourlyEl.classList.remove('hidden');
       hourlyEl.scrollIntoView({ behavior: 'smooth' });
     }
-
-    // ------------ Unit Toggle ------------
-    function updateUnitBtn(){ $('unitBtn').textContent = `°${state.unit} ↔︎ °${state.unit==='C'?'F':'C'}`; }
-    $('unitBtn').addEventListener('click', ()=>{ setUnit(state.unit==='C'?'F':'C'); updateUnitBtn(); });
-
+    
     async function loadWeather(){
       if (!state.coords) return;
       showError(''); setLoading(true);
