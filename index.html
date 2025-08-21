@@ -1,91 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Weather Now – Single‑File</title>
-  <meta name="description" content="A realistic weather web app. No API keys. Uses Open‑Meteo + OpenStreetMap Nominatim." />
-  <!-- Tailwind via CDN -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Fallback for emoji icons in some Windows fonts */
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Emoji, Noto Color Emoji, Apple Color Emoji, sans-serif; }
-    .line-clamp-1 { display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
-  </style>
 </head>
-<body class="min-h-screen w-full bg-gradient-to-b from-sky-100 to-indigo-100 text-slate-800">
-  <main class="mx-auto max-w-5xl px-4 py-6 sm:py-10">
-    <header class="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-      <div class="flex items-center gap-3">
-        <span id="headerIcon" class="text-4xl sm:text-5xl" aria-hidden>☀️</span>
-        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Weather Now</h1>
-      </div>
-      <div class="flex-1"></div>
-      <div class="flex items-center gap-2">
-        <button id="unitBtn" class="rounded-2xl bg-white/70 px-3 py-2 text-sm shadow hover:shadow-md transition font-medium" title="Toggle units">°C ↔︎ °F</button>
-        <button id="geoBtn" class="rounded-2xl bg-indigo-600 text-white px-4 py-2 text-sm shadow hover:shadow-lg transition font-semibold">Use My Location</button>
-      </div>
-    </header>
+<body class="bg-gradient-to-br from-blue-100 to-indigo-200 min-h-screen p-6">
+  <div class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold flex items-center gap-2">
+        <span id="headerIcon">☀️</span> Weather Forecast
+      </h1>
+      <button id="unitBtn" class="rounded-xl bg-white/70 px-3 py-1 shadow hover:bg-indigo-100 transition"></button>
+    </div><!-- Error / Loading -->
+<div id="error" class="text-red-600 mb-3 hidden"></div>
+<div id="loading" class="text-slate-600 mb-3 hidden">Loading…</div>
 
-    <div class="mt-6 relative">
-      <input id="search" placeholder="Search city, postcode, or place…" class="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-      <ul id="suggestions" class="hidden absolute z-20 mt-2 w-full max-h-72 overflow-auto rounded-xl border border-slate-200 bg-white/95 p-1 shadow-lg backdrop-blur"></ul>
+<!-- Current -->
+<div class="rounded-2xl border border-slate-200 bg-white/70 p-5 shadow mb-6">
+  <div class="flex items-center gap-4">
+    <div id="currentIcon" class="text-5xl">☀️</div>
+    <div>
+      <div id="locName" class="font-semibold text-lg">Pick a place</div>
+      <div id="tz" class="text-sm text-slate-500"></div>
+      <div id="temp" class="text-2xl font-bold">--</div>
+      <div id="feels" class="text-slate-600">--</div>
     </div>
+  </div>
+  <div class="grid grid-cols-2 gap-3 mt-4 text-sm text-slate-700">
+    <div>Condition: <span id="cond">--</span></div>
+    <div>Humidity: <span id="humidity">--</span></div>
+    <div>Wind: <span id="wind">--</span> (<span id="windDir">--</span>)</div>
+    <div>Precip: <span id="precip">--</span></div>
+  </div>
+</div>
 
-    <div id="error" class="hidden mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700"></div>
+<!-- Daily forecast -->
+<h2 class="font-semibold mb-2">Next 7 Days</h2>
+<div id="daily" class="mt-4 grid grid-cols-7 gap-2 text-center"></div>
 
-    <section class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div class="lg:col-span-2 rounded-3xl bg-white/70 shadow p-5">
-        <div class="flex items-start justify-between">
-          <div>
-            <p class="text-sm uppercase tracking-wide text-slate-500">Currently</p>
-            <h2 id="locName" class="text-xl font-semibold line-clamp-1" title="Pick a place">Pick a place</h2>
-            <p id="tz" class="text-xs text-slate-500 mt-1"></p>
-          </div>
-          <div id="currentIcon" class="text-5xl">--</div>
-        </div>
+<!-- Day details + hourly forecast -->
+<div id="dayDetails" class="mt-6"></div>
+<div id="hourly" class="mt-6 hidden"></div>
 
-        <div class="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <div class="rounded-2xl border border-slate-200 bg-white/60 p-4 shadow-sm">
-            <div class="text-xs uppercase tracking-wide text-slate-500">Temperature</div>
-            <div id="temp" class="text-lg font-semibold mt-1">--</div>
-            <div id="feels" class="text-xs text-slate-500 mt-1"></div>
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-white/60 p-4 shadow-sm">
-            <div class="text-xs uppercase tracking-wide text-slate-500">Humidity</div>
-            <div id="humidity" class="text-lg font-semibold mt-1">--</div>
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-white/60 p-4 shadow-sm">
-            <div class="text-xs uppercase tracking-wide text-slate-500">Wind</div>
-            <div id="wind" class="text-lg font-semibold mt-1">--</div>
-            <div id="windDir" class="text-xs text-slate-500 mt-1"></div>
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-white/60 p-4 shadow-sm">
-            <div class="text-xs uppercase tracking-wide text-slate-500">Precipitation</div>
-            <div id="precip" class="text-lg font-semibold mt-1">--</div>
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-white/60 p-4 shadow-sm">
-            <div class="text-xs uppercase tracking-wide text-slate-500">Conditions</div>
-            <div id="cond" class="text-lg font-semibold mt-1">--</div>
-          </div>
-        </div>
-        <div id="loading" class="hidden mt-6 animate-pulse text-sm text-slate-500">Loading weather…</div>
-      </div>
-
-      <div class="rounded-3xl bg-white/70 shadow p-5">
-        <p class="text-sm uppercase tracking-wide text-slate-500">Next 7 days</p>
-        <div id="daily" class="mt-4 grid grid-cols-7 gap-2 text-center"></div>
-      </div>
-      
-      <!-- Day details + hourly forecast -->
-      <div id="dayDetails" class="mt-6"></div>
-      <div id="hourly" class="mt-6 hidden"></div>
-    </section>
-
-    <footer class="mt-10 text-xs text-slate-500">Data: Open‑Meteo & OpenStreetMap Nominatim. No API key required. Your location stays in your browser.</footer>
-  </main>
-
-  <script>
+  </div>  <script>
     // ------------ Utilities ------------
     const $ = (id) => document.getElementById(id);
     const fmt = (n, d=0) => Number.isFinite(n) ? n.toFixed(d) : '--';
@@ -108,6 +68,7 @@
       coords: JSON.parse(localStorage.getItem('coords') || 'null'),
       locName: localStorage.getItem('locName') || '',
       data: null,
+      selectedDay: null,
     };
 
     function setUnit(u){ state.unit = u; localStorage.setItem('unit', u); render(); }
@@ -120,41 +81,20 @@
     function displayUnit(c){ return state.unit === 'C' ? c : toF(c); }
     function prettyDate(iso){ return new Intl.DateTimeFormat(undefined,{weekday:'short',month:'short',day:'numeric'}).format(new Date(iso)); }
 
-    // ------------ Geocoding ------------
-    async function geocode(q){
-      const url = new URL('https://nominatim.openstreetmap.org/search');
-      url.searchParams.set('q', q);
-      url.searchParams.set('format','json');
-      url.searchParams.set('addressdetails','1');
-      url.searchParams.set('limit','5');
-      const res = await fetch(url.toString(), { headers: { 'Accept-Language': navigator.language || 'en' }});
-      if (!res.ok) throw new Error('Geocoding failed');
-      return res.json();
-    }
-    async function reverseGeocode(lat, lon){
-      const url = new URL('https://nominatim.openstreetmap.org/reverse');
-      url.searchParams.set('lat', lat); url.searchParams.set('lon', lon);
-      url.searchParams.set('format','json'); url.searchParams.set('zoom','10');
-      const res = await fetch(url.toString(), { headers: { 'Accept-Language': navigator.language || 'en' }});
-      if (!res.ok) throw new Error('Reverse geocoding failed');
-      const j = await res.json();
-      return j?.display_name || `${fmt(lat,2)}, ${fmt(lon,2)}`;
-    }
-
     // ------------ Weather ------------
     async function fetchWeather(lat, lon){
       const url = new URL('https://api.open-meteo.com/v1/forecast');
       url.searchParams.set('latitude', lat);
       url.searchParams.set('longitude', lon);
       url.searchParams.set('current', ['temperature_2m','apparent_temperature','wind_speed_10m','wind_direction_10m','relative_humidity_2m','precipitation','weather_code'].join(','));
-      url.searchParams.set('daily', ['weather_code','temperature_2m_max','temperature_2m_min','precipitation_sum','wind_speed_10m_max'].join(','));
+      url.searchParams.set('daily', ['weather_code','temperature_2m_max','temperature_2m_min','precipitation_sum','wind_speed_10m_max','wind_direction_10m_dominant'].join(','));
+      url.searchParams.set('hourly', ['temperature_2m','relative_humidity_2m','precipitation','wind_speed_10m','weather_code'].join(','));
       url.searchParams.set('timezone','auto');
       const res = await fetch(url.toString());
       if (!res.ok) throw new Error('Weather fetch failed');
       return res.json();
     }
-
-    // ------------ Search UI ------------
+        // ------------ Search UI ------------
     let suggestAbort; let suggestTimer;
     $('search').addEventListener('input', (e)=>{
       const q = e.target.value.trim();
@@ -202,7 +142,7 @@
     // ------------ Unit Toggle ------------
     function updateUnitBtn(){ $('unitBtn').textContent = `°${state.unit} ↔︎ °${state.unit==='C'?'F':'C'}`; }
     $('unitBtn').addEventListener('click', ()=>{ setUnit(state.unit==='C'?'F':'C'); updateUnitBtn(); });
-
+    
     // ------------ Render ------------
     function render(){
       updateUnitBtn();
@@ -232,21 +172,90 @@
       const dailyEl = $('daily');
       dailyEl.innerHTML = '';
       if (daily && daily.time){
-        daily.time.slice(0,7).forEach((d, i)=>{
-          const card = document.createElement('div');
-          card.className = 'rounded-2xl border border-slate-200 bg-white/60 p-2';
-          const head = document.createElement('div'); head.className = 'text-xs text-slate-500'; head.textContent = prettyDate(d);
-          const icon = document.createElement('div'); icon.className = 'text-2xl'; icon.textContent = codeToIcon(daily.weather_code[i]).icon;
-          const temps = document.createElement('div'); temps.className = 'text-xs mt-1';
-          temps.innerHTML = `<span class="font-semibold">${fmt(displayUnit(daily.temperature_2m_max[i]),0)}°</span><span class="text-slate-500"> / ${fmt(displayUnit(daily.temperature_2m_min[i]),0)}°</span>`;
-          const precip = document.createElement('div'); precip.className = 'text-[11px] text-slate-500 mt-1'; precip.textContent = `${fmt(daily.precipitation_sum[i],0)} mm`;
-          card.appendChild(head); card.appendChild(icon); card.appendChild(temps); card.appendChild(precip);
+        daily.time.forEach((d, i)=>{
+          const card = document.createElement('button');
+          card.className = 'rounded-2xl border border-slate-200 bg-white/60 p-2 hover:bg-indigo-100 transition';
+          card.innerHTML = `
+            <div class="text-xs text-slate-500">${prettyDate(d)}</div>
+            <div class="text-2xl">${codeToIcon(daily.weather_code[i]).icon}</div>
+            <div class="text-xs mt-1">
+              <span class="font-semibold">${fmt(displayUnit(daily.temperature_2m_max[i]),0)}°</span>
+              <span class="text-slate-500"> / ${fmt(displayUnit(daily.temperature_2m_min[i]),0)}°</span>
+            </div>
+          `;
+          card.addEventListener('click', ()=>{
+            state.selectedDay = i;
+            renderDayDetails();
+            showHourly(d);
+          });
           dailyEl.appendChild(card);
         });
-      } else {
-        const msg = document.createElement('div'); msg.className = 'text-sm text-slate-500'; msg.textContent = 'No forecast. Pick a place.'; dailyEl.appendChild(msg);
+      }
+      renderDayDetails();
+    }
+
+    function renderDayDetails(){
+      const detailBox = $('dayDetails');
+      detailBox.innerHTML = '';
+      const daily = state.data?.daily;
+      if (daily && state.selectedDay != null){
+        const i = state.selectedDay;
+        const { icon, label } = codeToIcon(daily.weather_code[i]);
+        detailBox.innerHTML = `
+          <div class="rounded-2xl border border-slate-300 bg-white/80 p-4 shadow-md">
+            <h3 class="font-semibold text-lg mb-2">${prettyDate(daily.time[i])}</h3>
+            <div class="flex items-center gap-3 mb-3">
+              <div class="text-4xl">${icon}</div>
+              <div class="text-slate-700">${label}</div>
+            </div>
+            <p><strong>Max Temp:</strong> ${fmt(displayUnit(daily.temperature_2m_max[i]),1)} °${state.unit}</p>
+            <p><strong>Min Temp:</strong> ${fmt(displayUnit(daily.temperature_2m_min[i]),1)} °${state.unit}</p>
+            <p><strong>Precipitation:</strong> ${fmt(daily.precipitation_sum[i],1)} mm</p>
+            <p><strong>Max Wind:</strong> ${fmt(daily.wind_speed_10m_max[i],0)} km/h (${daily.wind_direction_10m_dominant[i]}°)</p>
+          </div>`;
       }
     }
+
+    function showHourly(dayIso) {
+      const hourly = state.data?.hourly;
+      if (!hourly) return;
+
+      const start = new Date(dayIso);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 1);
+
+      const times = hourly.time.map(t => new Date(t));
+      const hourlyEl = $('hourly');
+      hourlyEl.innerHTML = '';
+
+      const row = document.createElement('div');
+      row.className = 'flex gap-3 overflow-x-auto pb-3';
+
+      times.forEach((time, i) => {
+        if (time >= start && time < end) {
+          const box = document.createElement('div');
+          box.className = 'flex-shrink-0 rounded-xl border border-slate-200 bg-white/80 p-2 w-20 text-center shadow-sm';
+          const { icon } = codeToIcon(hourly.weather_code[i]);
+          box.innerHTML = `
+            <div class="text-xs text-slate-500">${time.getHours()}:00</div>
+            <div class="text-xl">${icon}</div>
+            <div class="text-sm font-semibold">${fmt(displayUnit(hourly.temperature_2m[i]),0)}°</div>
+            <div class="text-[11px] text-slate-500">${fmt(hourly.precipitation[i],1)}mm</div>
+            <div class="text-[11px] text-slate-500">💨${fmt(hourly.wind_speed_10m[i],0)}km/h</div>
+            <div class="text-[11px] text-slate-500">💧${fmt(hourly.relative_humidity_2m[i],0)}%</div>
+          `;
+          row.appendChild(box);
+        }
+      });
+
+      hourlyEl.appendChild(row);
+      hourlyEl.classList.remove('hidden');
+      hourlyEl.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ------------ Unit Toggle ------------
+    function updateUnitBtn(){ $('unitBtn').textContent = `°${state.unit} ↔︎ °${state.unit==='C'?'F':'C'}`; }
+    $('unitBtn').addEventListener('click', ()=>{ setUnit(state.unit==='C'?'F':'C'); updateUnitBtn(); });
 
     async function loadWeather(){
       if (!state.coords) return;
